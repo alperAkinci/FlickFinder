@@ -10,7 +10,7 @@ import UIKit
 
 /* 1 - Define constants */
 let BASE_URL = "https://api.flickr.com/services/rest/"
-let METHOD_NAME = "flickr.galleries.searchPhotos"
+let METHOD_NAME = "flickr.photos.search"
 let API_KEY = "5d5a5f042fdd0e0f65d99e908965ecc6"
 let TEXT = "baby+asian+elephant"
 let DATA_FORMAT = "json"
@@ -66,8 +66,37 @@ class ViewController: UIViewController {
             "format": DATA_FORMAT,
             "nojsoncallback": NO_JSON_CALLBACK
         ]
+        
+        
+        /* 3 - Initialize session and url */
+        let session = NSURLSession.sharedSession()
+        let urlString = BASE_URL + escapedParameters(methodArguments)
+        print(urlString)
+        let url = NSURL(string: urlString)!
+        let request = NSURLRequest(URL: url)
     }
     
+    
+    /* Helper function: Given a dictionary of parameters, convert to a string for a url */
+    func escapedParameters(parameters: [String : AnyObject]) -> String {
+        
+        var urlVars = [String]()
+        
+        for (key, value) in parameters {
+            
+            /* Make sure that it is a string value */
+            let stringValue = "\(value)"
+            
+            /* Escape it */
+            let escapedValue = stringValue.stringByAddingPercentEncodingWithAllowedCharacters(NSCharacterSet.URLQueryAllowedCharacterSet())
+            
+            /* Append it */
+            urlVars += [key + "=" + "\(escapedValue!)"]
+            
+        }
+        
+        return (!urlVars.isEmpty ? "?" : "") + urlVars.joinWithSeparator("&")
+    }
 
 
 }

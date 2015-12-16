@@ -12,7 +12,7 @@ import UIKit
 let BASE_URL = "https://api.flickr.com/services/rest/"
 let METHOD_NAME = "flickr.photos.search"
 let API_KEY = "5d5a5f042fdd0e0f65d99e908965ecc6"
-let TEXT = "baby+asian+elephant"
+let EXTRAS = "url_m"
 let DATA_FORMAT = "json"
 let NO_JSON_CALLBACK = "1"
 
@@ -62,7 +62,8 @@ class ViewController: UIViewController {
         let methodArguments = [
             "method": METHOD_NAME,
             "api_key": API_KEY,
-            "text": TEXT,
+            "text": "baby asian elephant",
+            "extras": EXTRAS,
             "format": DATA_FORMAT,
             "nojsoncallback": NO_JSON_CALLBACK
         ]
@@ -71,9 +72,27 @@ class ViewController: UIViewController {
         /* 3 - Initialize session and url */
         let session = NSURLSession.sharedSession()
         let urlString = BASE_URL + escapedParameters(methodArguments)
-        print(urlString)
+        //print(urlString)
         let url = NSURL(string: urlString)!
         let request = NSURLRequest(URL: url)
+        
+        /* 4 - Initialize task for getting data */
+        let task = session.dataTaskWithRequest(request) { (data, response, downloadError) in
+            
+            if let error = downloadError{
+                print ("Could not completr \(error)")
+            }else{
+                var parsingError : NSError? = nil
+                
+                //Now we get the data in raw format
+                //We have to parse it!!
+                print(data)
+            }
+        
+        }
+        
+        task.resume()
+
     }
     
     

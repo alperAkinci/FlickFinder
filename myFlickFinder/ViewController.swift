@@ -79,15 +79,17 @@ class ViewController: UIViewController {
         /* 4 - Initialize task for getting data */
         let task = session.dataTaskWithRequest(request) { (data, response, downloadError) in
             
-            if let error = downloadError{
-                print ("Could not completr \(error)")
-            }else{
-                var parsingError : NSError? = nil
-                
-                //Now we get the data in raw format
-                //We have to parse it!!
-                print(data)
+            let parsedResult: AnyObject!
+            do {
+                parsedResult = try NSJSONSerialization.JSONObjectWithData(data!, options: .AllowFragments)
+            } catch {
+                parsedResult = nil
+                print("Could not parse the data as JSON: '\(data)'")
+                return
             }
+                
+            print(parsedResult["photos"])
+            // so it prints another dictionary
         
         }
         

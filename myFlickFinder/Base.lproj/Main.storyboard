@@ -154,7 +154,11 @@
                         </constraints>
                     </view>
                     <connections>
+                        <outlet property="defaultLabel" destination="0HN-ED-WNN" id="qqU-qt-3ad"/>
                         <outlet property="imageTitleLabel" destination="Re0-rN-Oup" id="u7i-dd-97O"/>
+                        <outlet property="imageView" destination="f4S-g3-JBG" id="tlX-cW-Ize"/>
+                        <outlet property="textFieldLatitude" destination="nVY-Bk-BSj" id="ea5-9G-Xns"/>
+                        <outlet property="textFieldLongitude" destination="WLL-ey-bZp" id="qDK-Xc-liR"/>
                         <outlet property="textFieldPhrase" destination="SIi-KE-tuZ" id="xdB-N5-YLy"/>
                     </connections>
                 </viewController>

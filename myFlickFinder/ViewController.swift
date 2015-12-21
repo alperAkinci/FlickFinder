@@ -23,6 +23,7 @@ class ViewController: UIViewController {
 
     
     
+    @IBOutlet weak var defaultLabel: UILabel!
     
     @IBOutlet weak var imageView: UIImageView!
     @IBOutlet weak var textFieldPhrase: UITextField!
@@ -30,9 +31,21 @@ class ViewController: UIViewController {
     @IBOutlet weak var textFieldLongitude: UITextField!
     @IBOutlet weak var imageTitleLabel: UILabel!
     
+    var tapRecognizer : UITapGestureRecognizer?  = nil
     @IBAction func phraseSearchBtnPressed(sender: AnyObject) {
     
-        searchImageByPhraseInFlickr()
+        /* 2 - API method arguments */
+        let methodArguments : [String: String!] = [
+            "method": METHOD_NAME,
+            "api_key": API_KEY,
+            "text": self.textFieldPhrase.text,
+            "extras": EXTRAS,
+            "format": DATA_FORMAT,
+            "nojsoncallback": NO_JSON_CALLBACK
+        ]
+
+        
+        searchImageByPhraseInFlickr(methodArguments)
     
     }
     
@@ -44,30 +57,91 @@ class ViewController: UIViewController {
         
     }
     
-    
+    // MARK: Life Cycle
     
     override func viewDidLoad() {
         super.viewDidLoad()
-        // Do any additional setup after loading the view, typically from a nib.
-    }
-
-    override func didReceiveMemoryWarning() {
-        super.didReceiveMemoryWarning()
-        // Dispose of any resources that can be recreated.
-    }
-    
-    func searchImageByPhraseInFlickr(){
-    
-        /* 2 - API method arguments */
-        let methodArguments = [
-            "method": METHOD_NAME,
-            "api_key": API_KEY,
-            "text": "baby asian elephant",
-            "extras": EXTRAS,
-            "format": DATA_FORMAT,
-            "nojsoncallback": NO_JSON_CALLBACK
-        ]
         
+        tapRecognizer = UITapGestureRecognizer(target: self, action: "handleSingleTap:")
+        tapRecognizer?.numberOfTapsRequired = 1
+    }
+    
+    override func viewWillAppear(animated: Bool) {
+        super.viewWillAppear(animated)
+        
+        
+        self.addKeyboardDismissRecognizer()
+        self.subscribeToKeyboardNotifications()
+    }
+    
+    override func viewWillDisappear(animated: Bool) {
+        super.viewWillDisappear(animated)
+        
+        self.removeKeyboardDismissRecognizer()
+        self.unsubscribeToKeyboardNotifications()
+    }
+    
+    // MARK: Show/Hide Keyboard
+    
+    func addKeyboardDismissRecognizer() {
+        print("Add the recognizer to dismiss the keyboard")
+        self.view.addGestureRecognizer(tapRecognizer!)
+    }
+    
+    func removeKeyboardDismissRecognizer() {
+        print("Remove the recognizer to dismiss the keyboard")
+        self.view.removeGestureRecognizer(tapRecognizer!)
+    }
+    
+    func handleSingleTap(recognizer: UITapGestureRecognizer) {
+        print("End editing here")
+        self.view.endEditing(true)
+    }
+    
+    func subscribeToKeyboardNotifications() {
+        
+        NSNotificationCenter.defaultCenter().addObserver(self, selector: "keyboardWillShow:", name: UIKeyboardWillShowNotification, object: nil)
+        
+        NSNotificationCenter.defaultCenter().addObserver(self, selector: "keyboardWillHide:", name: UIKeyboardWillHideNotification, object: nil)
+    
+    }
+    
+    func unsubscribeToKeyboardNotifications() {
+        
+        NSNotificationCenter.defaultCenter().removeObserver(self, name: UIKeyboardWillShowNotification, object: nil)
+        
+    }
+    
+    func keyboardWillShow(notification: NSNotification) {
+        print("Shift the view's frame up so that controls are shown")
+        if self.imageView.image != nil {
+            self.defaultLabel.alpha = 0.0
+        }
+        if self.view.frame.origin.y == 0.0 {
+            self.view.frame.origin.y -= self.getKeyboardHeight(notification) / 2
+        }
+    }
+    
+    func keyboardWillHide(notification: NSNotification) {
+        print("Shift the view's frame down so that the view is back to its original placement")
+        if self.imageView.image == nil {
+            self.defaultLabel.alpha = 1.0
+        }
+        if self.view.frame.origin.y != 0.0 {
+            self.view.frame.origin.y += self.getKeyboardHeight(notification) / 2
+        }
+    }
+    
+    func getKeyboardHeight(notification: NSNotification) -> CGFloat {
+        print("Get and return the keyboard's height from the notification")
+        let userInfo = notification.userInfo
+        let keyboardSize = userInfo![UIKeyboardFrameEndUserInfoKey] as! NSValue // of CGRect
+        return keyboardSize.CGRectValue().height
+    }
+    
+    // MARK: Flickr API
+    
+    func searchImageByPhraseInFlickr(methodArguments : [String : AnyObject]){
         
         /* 3 - Initialize session and url */
         let session = NSURLSession.sharedSession()
@@ -79,6 +153,7 @@ class ViewController: UIViewController {
         /* 4 - Initialize task for getting data */
         let task = session.dataTaskWithRequest(request) { (data, response, downloadError) in
             
+            /* Parse the data! */
             let parsedResult: AnyObject!
             do {
                 parsedResult = try NSJSONSerialization.JSONObjectWithData(data!, options: .AllowFragments)
@@ -88,8 +163,70 @@ class ViewController: UIViewController {
                 return
             }
                 
-            print(parsedResult["photos"])
-            // so it prints another dictionary
+            
+            /* GUARD: Did Flickr return an error? */
+            guard let stat = parsedResult["stat"] as? String where stat == "ok" else {
+                print("Flickr API returned an error. See error code and message in \(parsedResult)")
+                return
+            }
+            
+            guard let photosDictionary = parsedResult["photos"] as? NSDictionary else{
+                print("Cannot find keys 'photos' in  \(parsedResult)")
+                return
+            }
+            
+            
+            //Total Number of Photos
+            var totalPhotosVal = 0
+            if let totalphotos = photosDictionary["total"] as? String {
+                totalPhotosVal = (totalphotos as NSString).integerValue
+            
+            }
+            
+            
+            //If photos returned, lets grab one !
+            if totalPhotosVal > 0 {
+                
+                guard let photosArray = photosDictionary["photo"] as? [[String:AnyObject]] else{
+                    print("Cannot find keys 'photo' in  \(photosDictionary)")
+                    return
+                }
+                
+                //Get a randow index , pick a random photo in dictionary
+                let randomPhotoIndex = Int(arc4random_uniform(UInt32(photosArray.count)))
+                let photoDictionary = photosArray[randomPhotoIndex] as NSDictionary
+                
+                
+                
+                //Prepare the UI Updates
+                
+                let photoTitle = photosDictionary["title"] as? String
+                let imageURLString = photoDictionary["url_m"] as? String
+                let imageURL = NSURL(string: imageURLString!)
+                
+                //Update the UI on the main thread
+                if let imageData = NSData(contentsOfURL: imageURL!){
+                    dispatch_async(dispatch_get_main_queue(),{
+                        print ("Success , updates the UI here !")
+                        self.imageTitleLabel.text = photoTitle
+                        self.imageView.image = UIImage(data: imageData)
+                        self.defaultLabel.alpha = 0.0
+                    })
+                }else{
+                    
+                    print("Image does not exist in\(imageURL)")
+                }
+            }else {
+                dispatch_async(dispatch_get_main_queue(),{
+                    print ("Success , updates the UI here !")
+                    self.imageTitleLabel.text = "No photos found , search again!"
+                    self.imageView.image = nil
+                    self.defaultLabel.alpha = 1.0
+                })
+                
+            }
+            
+            
         
         }
         

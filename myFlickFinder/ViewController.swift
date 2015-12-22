@@ -42,7 +42,7 @@ class ViewController: UIViewController {
     var tapRecognizer : UITapGestureRecognizer?  = nil
     @IBAction func phraseSearchBtnPressed(sender: AnyObject) {
         
-        
+        if !(textFieldPhrase.text!.isEmpty){
         /* 2 - API method arguments */
         let methodArguments : [String: String!] = [
             "method": METHOD_NAME,
@@ -52,16 +52,17 @@ class ViewController: UIViewController {
             "format": DATA_FORMAT,
             "nojsoncallback": NO_JSON_CALLBACK
         ]
-
-        
         searchImageInFlickr(methodArguments)
+        }else{
+            imageTitleLabel.text = "Phrase empty."
+        }
     
     }
     
     
     
     @IBAction func latLongSearchBtnPressed(sender: AnyObject) {
-        
+        if !textFieldLatitude.text!.isEmpty && !textFieldLongitude.text!.isEmpty{
         /* 2 - API method arguments */
         let methodArguments = [
             "method": METHOD_NAME,
@@ -74,6 +75,10 @@ class ViewController: UIViewController {
         ]
         
         searchImageInFlickr(methodArguments)
+        
+        }else{
+            imageTitleLabel.text = "Lat/Lon empty."
+        }
     }
     
     // MARK: Life Cycle

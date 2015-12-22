@@ -41,7 +41,8 @@ class ViewController: UIViewController {
     
     var tapRecognizer : UITapGestureRecognizer?  = nil
     @IBAction func phraseSearchBtnPressed(sender: AnyObject) {
-    
+        
+        
         /* 2 - API method arguments */
         let methodArguments : [String: String!] = [
             "method": METHOD_NAME,
@@ -218,17 +219,36 @@ class ViewController: UIViewController {
                 
                 //Prepare the UI Updates
                 
-                let photoTitle = photosDictionary["title"] as? String
-                let imageURLString = photoDictionary["url_m"] as? String
-                let imageURL = NSURL(string: imageURLString!)
+                let photoTitle = photoDictionary["title"] as? String
+               
+                guard let imageURLString = photoDictionary["url_m"] as? String else {
+                
+                    print("Cannot find keys 'url_m' in  \(photosDictionary)")
+                    return
+                }
+                
+                
+                
+                let imageURL = NSURL(string: imageURLString)
                 
                 //Update the UI on the main thread
                 if let imageData = NSData(contentsOfURL: imageURL!){
                     dispatch_async(dispatch_get_main_queue(),{
                         print ("Success , updates the UI here !")
-                        self.imageTitleLabel.text = photoTitle
+                        
                         self.imageView.image = UIImage(data: imageData)
                         self.defaultLabel.alpha = 0.0
+                        
+                        if methodArguments["bbox"] != nil {
+                            if let photoTitle = photoTitle {
+                                self.imageTitleLabel.text = ("\(self.getLatLonString()) \(photoTitle)")
+                                
+                            }else {
+                                self.imageTitleLabel.text = ("\(self.getLatLonString()) \(photoTitle)")
+                            }
+                        }else {
+                            self.imageTitleLabel.text = photoTitle ?? "(Untitled)"
+                        }
                     })
                 }else{
                     
@@ -269,6 +289,13 @@ class ViewController: UIViewController {
         
         return ("\(bottom_left_lon ),\(bottom_left_lat),\(top_right_lon),\(top_right_lat)")
         
+    }
+    
+    func getLatLonString() -> String {
+        let latitude = (self.textFieldLatitude.text! as NSString).doubleValue
+        let longitude = (self.textFieldLongitude.text! as NSString).doubleValue
+        
+        return "(\(latitude), \(longitude))"
     }
     
     
